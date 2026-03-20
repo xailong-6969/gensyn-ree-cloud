@@ -1,0 +1,167 @@
+diff --git a/ree.sh b/ree.sh
+index 140dd64..33d7936 100644
+--- a/ree.sh
++++ b/ree.sh
+@@ -44,6 +44,8 @@ set -euo pipefail
+ 
+ IMAGE_REMOTE="gensynai/ree:v0.1.0"
+ IMAGE_LOCAL="ree"
++CLOUD_MODE="${REE_CLOUD_MODE:-0}"
++HOST_CACHE="${REE_HOST_CACHE:-${HOME}/.cache}"
+ 
+ emit_phase() {
+   # Phase protocol for ree.py:
+@@ -55,13 +57,16 @@ emit_phase() {
+ }
+ 
+ emit_phase "pull:start"
++if [[ "${CLOUD_MODE}" == "1" ]]; then
++  emit_phase "pull:done"
++else
++  # Pull the latest image, and suppress Docker CLI hints (e.g., "What's Next?").
++  # NOTE: On macOS, make sure Docker Desktop is running before executing this script.
++  DOCKER_CLI_HINTS=false docker pull "${IMAGE_REMOTE}"
+ 
+-# Pull the latest image, and suppress Docker CLI hints (e.g., "What's Next?").
+-# NOTE: On macOS, make sure Docker Desktop is running before executing this script.
+-DOCKER_CLI_HINTS=false docker pull "${IMAGE_REMOTE}"
+-
+-docker tag "${IMAGE_REMOTE}" "${IMAGE_LOCAL}"
+-emit_phase "pull:done"
++  docker tag "${IMAGE_REMOTE}" "${IMAGE_LOCAL}"
++  emit_phase "pull:done"
++fi
+ 
+ ARGS=("$@")
+ SUBCOMMAND="run-all"
+@@ -116,14 +121,16 @@ if [ -n "${prompt_file_host}" ]; then
+     exit 2
+   fi
+ 
+-  prompt_file_abs_dir="$(cd "$(dirname "${prompt_file_host}")" && pwd -P)"
+-  prompt_file_base="$(basename "${prompt_file_host}")"
+-  prompt_file_container_dir="/mnt/prompt-file"
+-  prompt_file_container_path="${prompt_file_container_dir}/${prompt_file_base}"
++  if [[ "${CLOUD_MODE}" != "1" ]]; then
++    prompt_file_abs_dir="$(cd "$(dirname "${prompt_file_host}")" && pwd -P)"
++    prompt_file_base="$(basename "${prompt_file_host}")"
++    prompt_file_container_dir="/mnt/prompt-file"
++    prompt_file_container_path="${prompt_file_container_dir}/${prompt_file_base}"
+ 
+-  DOCKER_MOUNTS+=(-v "${prompt_file_abs_dir}:${prompt_file_container_dir}:ro")
++    DOCKER_MOUNTS+=(-v "${prompt_file_abs_dir}:${prompt_file_container_dir}:ro")
+ 
+-  ARGS[${prompt_file_value_index}]="${prompt_file_container_path}"
++    ARGS[${prompt_file_value_index}]="${prompt_file_container_path}"
++  fi
+ fi
+ 
+ if [ -n "${receipt_path_host}" ]; then
+@@ -132,18 +139,20 @@ if [ -n "${receipt_path_host}" ]; then
+     exit 2
+   fi
+ 
+-  receipt_path_abs_dir="$(cd "$(dirname "${receipt_path_host}")" && pwd -P)"
+-  receipt_path_base="$(basename "${receipt_path_host}")"
+-  receipt_path_container_dir="/mnt/receipt-path"
+-  receipt_path_container_path="${receipt_path_container_dir}/${receipt_path_base}"
++  if [[ "${CLOUD_MODE}" != "1" ]]; then
++    receipt_path_abs_dir="$(cd "$(dirname "${receipt_path_host}")" && pwd -P)"
++    receipt_path_base="$(basename "${receipt_path_host}")"
++    receipt_path_container_dir="/mnt/receipt-path"
++    receipt_path_container_path="${receipt_path_container_dir}/${receipt_path_base}"
+ 
+-  DOCKER_MOUNTS+=(-v "${receipt_path_abs_dir}:${receipt_path_container_dir}:ro")
++    DOCKER_MOUNTS+=(-v "${receipt_path_abs_dir}:${receipt_path_container_dir}:ro")
+ 
+-  ARGS[${receipt_path_value_index}]="${receipt_path_container_path}"
++    ARGS[${receipt_path_value_index}]="${receipt_path_container_path}"
++  fi
+ fi
+ 
+ emit_phase "prepare:args"
+-
++mkdir -p "${HOST_CACHE}/gensyn" "${HOST_CACHE}/huggingface"
+ 
+ # We need to let the container have permissions for modifying ~/.cache.
+ # This is only needed on Linux.
+@@ -202,7 +211,7 @@ set_acl_best_effort() {
+   return 1
+ }
+ 
+-if [[ "${OS}" == "linux" ]]; then
++if [[ "${CLOUD_MODE}" != "1" && "${OS}" == "linux" ]]; then
+   emit_phase "prepare:acl:start"
+   if [[ "${cpu_only}" -eq 0 ]]; then
+     DOCKER_GPU_ARGS=(--gpus all)
+@@ -254,29 +263,48 @@ emit_phase "prepare:done"
+ # We pipe output through sed to rewrite these to the host-equivalent:
+ #   ~/.cache/gensyn/Qwen--Qwen3-0.6B/.../receipt_xxx.json
+ CONTAINER_CACHE="/home/gensyn/.cache"
+-HOST_CACHE="${HOME}/.cache"
+ 
+ TASKS_ROOT_ARGS=()
+ if [[ "${SUBCOMMAND}" != "validate" ]]; then
+-  TASKS_ROOT_ARGS=(--tasks-root "${CONTAINER_CACHE}/gensyn")
++  if [[ "${CLOUD_MODE}" == "1" ]]; then
++    TASKS_ROOT_ARGS=(--tasks-root "${HOST_CACHE}/gensyn")
++  else
++    TASKS_ROOT_ARGS=(--tasks-root "${CONTAINER_CACHE}/gensyn")
++  fi
+ fi
+ 
+-DOCKER_CMD=(
+-  docker run --rm
+-  ${DOCKER_GPU_ARGS+"${DOCKER_GPU_ARGS[@]}"}
+-  "${DOCKER_MOUNTS[@]}"
+-  "${IMAGE_LOCAL}"
+-  "${SUBCOMMAND}"
+-  "${TASKS_ROOT_ARGS[@]+"${TASKS_ROOT_ARGS[@]}"}"
+-  "${ARGS[@]}"
+-)
++run_with_path_rewrite() {
++  "$@" 2>&1 | sed "s|${CONTAINER_CACHE}|${HOST_CACHE}|g"
++}
++
++if [[ "${CLOUD_MODE}" == "1" ]]; then
++  mkdir -p "${HOST_CACHE}/gensyn" "${HOST_CACHE}/huggingface"
++  RUN_CMD=(
++    env
++    "HF_HOME=${HOST_CACHE}/huggingface"
++    gensyn-sdk
++    "${SUBCOMMAND}"
++    "${TASKS_ROOT_ARGS[@]+"${TASKS_ROOT_ARGS[@]}"}"
++    "${ARGS[@]}"
++  )
++else
++  RUN_CMD=(
++    docker run --rm
++    ${DOCKER_GPU_ARGS+"${DOCKER_GPU_ARGS[@]}"}
++    "${DOCKER_MOUNTS[@]}"
++    "${IMAGE_LOCAL}"
++    "${SUBCOMMAND}"
++    "${TASKS_ROOT_ARGS[@]+"${TASKS_ROOT_ARGS[@]}"}"
++    "${ARGS[@]}"
++  )
++fi
+ 
+ printf 'Running command:\n'
+-printf '%q ' "${DOCKER_CMD[@]}"
++printf '%q ' "${RUN_CMD[@]}"
+ printf '\n'
+ 
+ emit_phase "run:start"
+-if "${DOCKER_CMD[@]}" 2>&1 | sed "s|${CONTAINER_CACHE}|${HOST_CACHE}|g"; then
++if run_with_path_rewrite "${RUN_CMD[@]}"; then
+   emit_phase "run:done"
+   echo
+   # Find and print the most recent receipt file for convenience.
+@@ -290,7 +318,7 @@ if "${DOCKER_CMD[@]}" 2>&1 | sed "s|${CONTAINER_CACHE}|${HOST_CACHE}|g"; then
+   fi
+   emit_phase "complete"
+ else
+-  status=${PIPESTATUS[0]}
++  status=$?
+   emit_phase "run:failed"
+   exit "${status}"
+ fi
