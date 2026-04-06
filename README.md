@@ -30,6 +30,17 @@ The official REE flow is designed for local machines with Docker. This image ada
 
 ---
 
+## Usage Guides
+
+| Environment | Guide |
+|-------------|-------|
+| Vast.ai | [Go to Vast.ai setup](#vastai-setup) |
+| QuickPod | [Go to QuickPod setup](#quickpod-setup) |
+| Local PC | [Go to Local PC usage](#local-pc-usage) |
+| Local PC details | [Open docs/LOCAL.md](docs/LOCAL.md) |
+
+---
+
 ## Vast.ai Setup
 
 ### 1. Open the Template
@@ -159,6 +170,7 @@ Important:
 
 - Do not run `docker run ...` from inside the container shell
 - If your prompt looks like `root@<container-id>:/#`, you are already inside the container
+- For the full local guide with launcher scripts and receipt persistence, see [docs/LOCAL.md](docs/LOCAL.md)
 
 ---
 
