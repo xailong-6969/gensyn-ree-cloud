@@ -8,14 +8,14 @@ This image can be used on a local PC too. The local flow keeps the official REE 
 
 ```bash
 docker pull xailong6969/gensyn-ree-cloud:latest
-docker run --rm -it --gpus all -e REE_CLOUD_MODE=1 --workdir /opt/ree-cloud --entrypoint /bin/bash xailong6969/gensyn-ree-cloud:latest
+docker run --rm -it --gpus all -e REE_DIRECT_MODE=1 --workdir /opt/ree-cloud --entrypoint /bin/bash xailong6969/gensyn-ree-cloud:latest
 ```
 
 ### Windows PowerShell
 
 ```powershell
 docker pull xailong6969/gensyn-ree-cloud:latest
-docker run --rm -it --gpus all -e REE_CLOUD_MODE=1 --workdir /opt/ree-cloud --entrypoint /bin/bash xailong6969/gensyn-ree-cloud:latest
+docker run --rm -it --gpus all -e REE_DIRECT_MODE=1 --workdir /opt/ree-cloud --entrypoint /bin/bash xailong6969/gensyn-ree-cloud:latest
 ```
 
 ## Inside the container

@@ -1,3 +1,4 @@
+export REE_DIRECT_MODE="${REE_DIRECT_MODE:-1}"
 export REE_CLOUD_MODE="${REE_CLOUD_MODE:-1}"
 export REE_HOST_CACHE="${REE_HOST_CACHE:-/workspace/.cache}"
 export REE_RECEIPTS_DIR="${REE_RECEIPTS_DIR:-/workspace/receipts}"

@@ -141,7 +141,7 @@ docker pull xailong6969/gensyn-ree-cloud:latest
 ### 2. Start a shell inside the container
 
 ```bash
-docker run --rm -it --gpus all -e REE_CLOUD_MODE=1 --workdir /opt/ree-cloud --entrypoint /bin/bash xailong6969/gensyn-ree-cloud:latest
+docker run --rm -it --gpus all -e REE_DIRECT_MODE=1 --workdir /opt/ree-cloud --entrypoint /bin/bash xailong6969/gensyn-ree-cloud:latest
 ```
 
 ### 3. Run REE inside the container

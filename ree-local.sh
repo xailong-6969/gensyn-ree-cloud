@@ -19,6 +19,7 @@ docker pull "${IMAGE}"
 
 exec docker run --rm -it \
   "${GPU_ARGS[@]}" \
+  -e REE_DIRECT_MODE=1 \
   -e REE_CLOUD_MODE=1 \
   -e REE_HOST_CACHE=/workspace/.cache \
   -e REE_RECEIPTS_DIR=/workspace/receipts \
