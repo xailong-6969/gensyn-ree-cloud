@@ -1,0 +1,28 @@
+export REE_CLOUD_MODE="${REE_CLOUD_MODE:-1}"
+export REE_HOST_CACHE="${REE_HOST_CACHE:-/workspace/.cache}"
+export REE_RECEIPTS_DIR="${REE_RECEIPTS_DIR:-/workspace/receipts}"
+export HF_HOME="${HF_HOME:-${REE_HOST_CACHE}/huggingface}"
+export PATH="/runtime/bin:${PATH}"
+
+mkdir -p "${REE_HOST_CACHE}/gensyn" "${HF_HOME}" "${REE_RECEIPTS_DIR}"
+
+cd /opt/ree-cloud
+
+alias ree-run='bash /opt/ree-local-tools/ree-run-local.sh'
+alias ree-latest-receipt='ls -lah /workspace/receipts && printf "\nLatest receipt path:\n  /workspace/receipts/latest-receipt.json\n"'
+
+cat <<'EOF'
+Local REE shell ready.
+
+Current directory:
+  /opt/ree-cloud
+
+Run:
+  python3 ree.py
+
+Better receipt visibility:
+  ree-run
+
+Receipts directory:
+  /workspace/receipts
+EOF
