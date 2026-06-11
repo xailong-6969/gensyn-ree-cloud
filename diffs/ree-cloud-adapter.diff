@@ -1,17 +1,20 @@
 diff --git a/ree.sh b/ree.sh
-index 140dd64..33d7936 100644
+index ca5020f..4f61b56 100755
 --- a/ree.sh
 +++ b/ree.sh
-@@ -44,6 +44,8 @@ set -euo pipefail
+@@ -43,8 +43,10 @@ set -euo pipefail
+ # See the gensyn-sdk documentation for more detailed usage options:
+ #   https://docs.gensyn.ai/tech/ree
  
- IMAGE_REMOTE="gensynai/ree:v0.1.0"
+-IMAGE_REMOTE="gensynai/ree:v0.3.0"
++IMAGE_REMOTE="${REE_IMAGE_REMOTE:-gensynai/ree:v0.4.0}"
  IMAGE_LOCAL="ree"
 +CLOUD_MODE="${REE_CLOUD_MODE:-0}"
 +HOST_CACHE="${REE_HOST_CACHE:-${HOME}/.cache}"
  
  emit_phase() {
    # Phase protocol for ree.py:
-@@ -55,13 +57,16 @@ emit_phase() {
+@@ -56,13 +58,16 @@ emit_phase() {
  }
  
  emit_phase "pull:start"
@@ -34,7 +37,7 @@ index 140dd64..33d7936 100644
  
  ARGS=("$@")
  SUBCOMMAND="run-all"
-@@ -116,14 +121,16 @@ if [ -n "${prompt_file_host}" ]; then
+@@ -117,14 +122,16 @@ if [ -n "${prompt_file_host}" ]; then
      exit 2
    fi
  
@@ -57,7 +60,7 @@ index 140dd64..33d7936 100644
  fi
  
  if [ -n "${receipt_path_host}" ]; then
-@@ -132,18 +139,20 @@ if [ -n "${receipt_path_host}" ]; then
+@@ -133,18 +140,20 @@ if [ -n "${receipt_path_host}" ]; then
      exit 2
    fi
  
@@ -85,7 +88,7 @@ index 140dd64..33d7936 100644
  
  # We need to let the container have permissions for modifying ~/.cache.
  # This is only needed on Linux.
-@@ -202,7 +211,7 @@ set_acl_best_effort() {
+@@ -203,7 +212,7 @@ set_acl_best_effort() {
    return 1
  }
  
@@ -94,7 +97,7 @@ index 140dd64..33d7936 100644
    emit_phase "prepare:acl:start"
    if [[ "${cpu_only}" -eq 0 ]]; then
      DOCKER_GPU_ARGS=(--gpus all)
-@@ -254,29 +263,48 @@ emit_phase "prepare:done"
+@@ -255,29 +264,48 @@ emit_phase "prepare:done"
  # We pipe output through sed to rewrite these to the host-equivalent:
  #   ~/.cache/gensyn/Qwen--Qwen3-0.6B/.../receipt_xxx.json
  CONTAINER_CACHE="/home/gensyn/.cache"
@@ -156,7 +159,7 @@ index 140dd64..33d7936 100644
    emit_phase "run:done"
    echo
    # Find and print the most recent receipt file for convenience.
-@@ -290,7 +318,7 @@ if "${DOCKER_CMD[@]}" 2>&1 | sed "s|${CONTAINER_CACHE}|${HOST_CACHE}|g"; then
+@@ -291,7 +319,7 @@ if "${DOCKER_CMD[@]}" 2>&1 | sed "s|${CONTAINER_CACHE}|${HOST_CACHE}|g"; then
    fi
    emit_phase "complete"
  else
