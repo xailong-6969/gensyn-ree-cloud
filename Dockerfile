@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS ree-wrapper
+FROM ubuntu:25.10 AS ree-wrapper
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG REE_REPO=https://github.com/gensyn-ai/ree.git
