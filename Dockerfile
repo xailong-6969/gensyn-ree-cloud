@@ -18,7 +18,7 @@ RUN cd /tmp/ree \
  && patch -p1 < /tmp/ree-cloud-adapter.diff \
  && chmod +x ree.py ree.sh
 
-FROM gensynai/ree:v0.6.0@sha256:18053a40616d2439f0c6dbba110796d922d3f26a30dca6efce7beff5f44bace7
+FROM gensynai/ree:v0.7.0@sha256:c32cf008d1277eb8340db59f86d479b07f580429c5b65aca3546ad64a5067950
 
 USER root
 WORKDIR /opt/ree-cloud
